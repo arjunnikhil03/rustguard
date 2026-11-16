@@ -1,0 +1,20 @@
+rules:
+  - id: spring-sql-injection-string-concat
+    languages: [java, kotlin]
+    severity: ERROR
+    message: "Possible SQL injection: query string built via concatenation passed to JDBC/JdbcTemplate"
+    metadata:
+      cwe: ["CWE-89"]
+      category: security
+      references:
+        - https://owasp.org/www-community/attacks/SQL_Injection
+      fix_suggestion: |
+        Use parameterized queries instead of string concatenation:
+        jdbcTemplate.query("SELECT * FROM users WHERE id = ?", new Object[]{id}, rowMapper);
+    # MVP heuristic: a jdbcTemplate/statement call whose first argument
+    # contains string concatenation (a '+' next to a quote) on the same
+    # statement. Same-line cases here overlap with rustguard-taint's
+    # cross-statement-aware taint-sql-injection check (see rustguard-cli's
+    # dedup logic); this regex rule stays useful as a fast, taint-engine-
+    # independent check and for Kotlin files (no taint support yet there).
+    pattern-regex: '(jdbcTemplate|statement)\.(query|update|execute)\s*\(\s*"[^"]*"\s*\+'

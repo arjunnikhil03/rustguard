@@ -1,0 +1,15 @@
+rules:
+  - id: spring-csrf-disabled
+    languages: [java, kotlin]
+    severity: ERROR
+    message: "CSRF protection is explicitly disabled in Spring Security configuration"
+    metadata:
+      cwe: ["CWE-352"]
+      category: security
+      references:
+        - https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html
+      fix_suggestion: |
+        Avoid disabling CSRF protection globally. If required for stateless APIs
+        using token auth, scope the disable to specific paths instead of the
+        entire filter chain, and document why it's safe in this context.
+    pattern-regex: '\.csrf\s*\(\s*\)\s*\.disable\s*\(\s*\)'

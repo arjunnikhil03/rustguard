@@ -1,0 +1,20 @@
+[package]
+name = "rustguard-external"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+quick-xml = { version = "0.31", features = ["serialize"] }
+# Pinned to an older minreq release for compatibility with this workspace's
+# rustc version; the underlying HTTP call (POST to OSV's API) has no
+# meaningful version sensitivity, so feel free to bump this if your own
+# toolchain is newer.
+minreq = { version = "=2.11.2", features = ["https-rustls"] }
+
+[dev-dependencies]
+tempfile = "=3.10.1"

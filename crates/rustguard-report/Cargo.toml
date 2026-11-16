@@ -1,0 +1,16 @@
+[package]
+name = "rustguard-report"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+
+# TODO (Phase 2): swap the hand-rolled `to_sarif` below for the `serde-sarif`
+# crate so the full SARIF schema (rules metadata, results, physical
+# locations, fingerprints) is modeled correctly for GitHub/GitLab code
+# scanning ingestion. See architecture doc section 6.

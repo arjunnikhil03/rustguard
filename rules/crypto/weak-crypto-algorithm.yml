@@ -1,0 +1,13 @@
+rules:
+  - id: weak-crypto-algorithm
+    languages: [java, kotlin]
+    severity: WARNING
+    message: "Use of weak/broken cryptographic algorithm"
+    metadata:
+      cwe: ["CWE-327"]
+      category: security
+      fix_suggestion: |
+        Use SHA-256 or stronger for hashing (or a password-hashing function like
+        bcrypt/Argon2 for credentials, never a raw digest), and AES-GCM instead
+        of DES for encryption.
+    pattern-regex: '(?i)(MessageDigest\.getInstance\s*\(\s*"(MD5|SHA1)"|Cipher\.getInstance\s*\(\s*"DES)'

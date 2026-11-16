@@ -1,0 +1,13 @@
+rules:
+  - id: spring-permit-all-broad
+    languages: [java, kotlin]
+    severity: WARNING
+    message: "Security configuration allows unauthenticated access via permitAll()"
+    metadata:
+      cwe: ["CWE-284"]
+      category: security
+      fix_suggestion: |
+        Confirm permitAll() is intentionally scoped to genuinely public endpoints
+        (e.g. /login, static assets, health checks) and not applied broadly to
+        request matchers that cover sensitive paths.
+    pattern-regex: '\.permitAll\s*\(\s*\)'

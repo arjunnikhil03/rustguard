@@ -1,0 +1,10 @@
+[package]
+name = "rustguard-taint"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+anyhow.workspace = true
+tree-sitter = "0.20"

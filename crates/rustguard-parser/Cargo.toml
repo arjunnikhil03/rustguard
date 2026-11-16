@@ -1,0 +1,16 @@
+[package]
+name = "rustguard-parser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+anyhow.workspace = true
+walkdir.workspace = true
+tree-sitter = "0.20"
+tree-sitter-java = "0.20"
+
+# TODO (Phase 1.x): add tree-sitter-kotlin (or an equivalent maintained
+# grammar) so Kotlin files get real ASTs too — right now `ParsedFile::tree`
+# is `None` for Kotlin, and `rustguard-taint` silently skips those files.

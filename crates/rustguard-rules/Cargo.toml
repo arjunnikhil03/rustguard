@@ -1,0 +1,20 @@
+[package]
+name = "rustguard-rules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+serde.workspace = true
+serde_yaml.workspace = true
+regex.workspace = true
+anyhow.workspace = true
+walkdir.workspace = true
+
+# TODO (Phase 1.x -> v1): swap the regex-based `pattern.text_match` matcher
+# below for `ast-grep-core`, so rules can express real structural patterns
+# (method_call/receiver_type/arg_index, taint source/sink/sanitizer blocks)
+# instead of raw regexes. Keep the YAML schema additive/backwards-compatible
+# so existing text_match rules keep working. See architecture doc section
+# 4.6 and section 2 (Build vs. Reuse Strategy).

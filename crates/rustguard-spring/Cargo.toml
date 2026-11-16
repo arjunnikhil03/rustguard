@@ -1,0 +1,16 @@
+[package]
+name = "rustguard-spring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+regex.workspace = true
+serde_yaml.workspace = true
+
+# TODO (Phase 1.x): once rustguard-parser produces a real AST/IR, rewrite
+# extraction below to walk annotation nodes structurally instead of regex
+# matching raw text. Regex is a deliberate, clearly-marked placeholder to
+# get a working end-to-end MVP shipped quickly (see architecture doc,
+# "Pragmatic delivery path", v1).

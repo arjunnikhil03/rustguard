@@ -1,0 +1,22 @@
+[package]
+name = "rustguard-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "rustguard"
+path = "src/main.rs"
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+rustguard-parser = { path = "../rustguard-parser" }
+rustguard-spring = { path = "../rustguard-spring" }
+rustguard-rules = { path = "../rustguard-rules" }
+rustguard-taint = { path = "../rustguard-taint" }
+rustguard-report = { path = "../rustguard-report" }
+rustguard-external = { path = "../rustguard-external" }
+rustguard-redmine = { path = "../rustguard-redmine" }
+clap.workspace = true
+anyhow.workspace = true
+walkdir.workspace = true

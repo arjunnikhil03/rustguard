@@ -1,0 +1,162 @@
+# RustGuard for GitLab CI (Community Edition–friendly)
+#
+# IMPORTANT CAVEAT — read before using:
+# GitLab's tier boundaries (what's Free/Community vs Ultimate-gated) shift
+# over time, and this was written from documentation that may be out of
+# date by the time you read it. What's accurate as far as this was written:
+#   - GitLab's native SAST/Dependency-Scanning report schemas render in the
+#     Security Dashboard / MR vulnerability widget — an Ultimate-tier
+#     feature.
+#   - "Code Quality" reports (the CodeClimate JSON schema) render inline on
+#     merge request diffs on ALL tiers, including Free/Community — which is
+#     why this template uses `rustguard scan --format gitlab-codequality`
+#     rather than trying to emit GitLab's native security report schema.
+# Verify this against your GitLab instance's current docs
+# (https://docs.gitlab.com/ee/ci/testing/code_quality.html) before relying
+# on it — in particular, confirm the `artifacts:reports:codequality` key is
+# still unrestricted on your GitLab version.
+#
+# This template has NOT been run against a live GitLab CI pipeline — it was
+# written to match documented GitLab CI syntax and manually verified that
+# `rustguard scan --format gitlab-codequality` produces valid CodeClimate
+# JSON, but the pipeline YAML itself should be validated in your own
+# GitLab instance (Pipeline Editor -> Validate, or a real pipeline run)
+# before you rely on it in production.
+#
+# Usage: copy this into your project (e.g. as `.gitlab-ci.yml`, or include
+# it from your existing one via `include: local: 'ci/rustguard.gitlab-ci.yml'`).
+# Assumes the RustGuard source (this repo) is vendored/submoduled into your
+# project at `./rustguard` — adjust paths if you instead publish RustGuard
+# as a prebuilt binary artifact (recommended for real use: building from
+# source on every pipeline run is slow; see the "faster alternative" note
+# at the bottom).
+
+stages:
+  - security
+
+rustguard-sast:
+  stage: security
+  image: rust:1.75
+  # Only rebuilds when the RustGuard source or Cargo.lock changes.
+  cache:
+    key: rustguard-cargo
+    paths:
+      - rustguard/target
+      - .cargo/registry
+  variables:
+    CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq gcc
+  script:
+    - cargo build --release --manifest-path rustguard/Cargo.toml
+    - ./rustguard/target/release/rustguard scan .
+        --rules ./rustguard/rules
+        --format gitlab-codequality
+        -o gl-code-quality-report.json
+        --fail-on high
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+    when: always
+  # `--fail-on high` means this job fails the pipeline on HIGH/CRITICAL
+  # findings. Set to `never` if you want visibility without blocking merges
+  # while you're first rolling this out.
+
+rustguard-maven-sca:
+  stage: security
+  image: rust:1.75
+  cache:
+    key: rustguard-cargo
+    paths:
+      - rustguard/target
+      - .cargo/registry
+  variables:
+    CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq gcc
+  script:
+    - cargo build --release --manifest-path rustguard/Cargo.toml
+    - ./rustguard/target/release/rustguard scan .
+        --rules ./rustguard/rules
+        --scan-maven-deps
+        --format gitlab-codequality
+        -o gl-dependency-report.json
+        --fail-on never
+  artifacts:
+    reports:
+      codequality: gl-dependency-report.json
+    when: always
+  # --fail-on never: dependency findings are usually something you want
+  # visibility into without necessarily blocking every merge on a
+  # transitive CVE you may not be able to fix immediately. Tighten this
+  # once you've triaged your current dependency tree.
+  #
+  # NOTE: --scan-maven-deps only reads the pom.xml at the scan root
+  # (single-module) and only checks DIRECT dependencies — see
+  # rustguard-external's module docs for what this does and doesn't cover
+  # (no transitive resolution, no multi-module parent/child walking).
+  # This job also makes outbound HTTPS calls to api.osv.dev per
+  # dependency — make sure your GitLab runner's network policy allows
+  # that egress.
+
+rustguard-redmine:
+  stage: security
+  image: rust:1.75
+  cache:
+    key: rustguard-cargo
+    paths:
+      - rustguard/target
+      - .cargo/registry
+  variables:
+    CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq gcc
+  script:
+    - cargo build --release --manifest-path rustguard/Cargo.toml
+    - ./rustguard/target/release/rustguard scan .
+        --rules ./rustguard/rules
+        --report-to-redmine
+        --redmine-url "${RUSTGUARD_REDMINE_URL}"
+        --redmine-project "${RUSTGUARD_REDMINE_PROJECT}"
+        --redmine-min-severity high
+        --fail-on never
+  rules:
+    # Only file defects on the default branch — you don't want every
+    # feature-branch pipeline filing tickets for code that hasn't merged.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  # Set these in CI/CD Settings -> Variables (mark RUSTGUARD_REDMINE_API_KEY
+  # as Masked and Protected):
+  #   RUSTGUARD_REDMINE_URL       - e.g. https://redmine.example.com
+  #   RUSTGUARD_REDMINE_PROJECT   - your Redmine project identifier
+  #   RUSTGUARD_REDMINE_API_KEY   - your Redmine API key (read by rustguard
+  #                                 directly from this env var, never passed
+  #                                 as a CLI flag)
+  #
+  # NOT LIVE-TESTED: this job's `rustguard` invocation has been verified to
+  # build and run correctly, but the actual Redmine API calls have not been
+  # exercised against a real Redmine instance (see rustguard-redmine's
+  # module docs). Test against a real instance before enabling --fail-on
+  # anything other than never for this job, or before removing the branch
+  # restriction above.
+  #
+  # RECOMMENDED FIRST ROLLOUT STEP: add `--redmine-dry-run` to the script
+  # above and run this job a few times to confirm it correctly identifies
+  # existing vs. new issues before letting it file real tickets. See
+  # docs/debugging-redmine.md for a step-by-step connectivity checklist if
+  # anything looks wrong.
+
+# ---------------------------------------------------------------------
+# Faster alternative for real use: instead of building from source in
+# every pipeline (slow, and requires a Rust toolchain + gcc in your CI
+# image), build a RustGuard release binary once, publish it as a package
+# or container image, and have these jobs just download/run it. E.g.:
+#
+#   rustguard-sast:
+#     stage: security
+#     image: your-registry/rustguard:latest   # image containing the binary
+#     script:
+#       - rustguard scan . --rules /opt/rustguard/rules --format gitlab-codequality -o gl-code-quality-report.json --fail-on high
+#     artifacts:
+#       reports:
+#         codequality: gl-code-quality-report.json
+# ---------------------------------------------------------------------

@@ -1,0 +1,19 @@
+[package]
+name = "rustguard-redmine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+rustguard-git = { path = "../rustguard-git" }
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+regex.workspace = true
+# Pinned to match the version already validated to compile against this
+# workspace's rustc version (see rustguard-external).
+minreq = { version = "=2.11.2", features = ["https-rustls", "json-using-serde"] }
+
+[dev-dependencies]
+tempfile = "=3.10.1"

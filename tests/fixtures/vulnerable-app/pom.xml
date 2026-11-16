@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example.demo</groupId>
+  <artifactId>vulnerable-app</artifactId>
+  <version>1.0.0</version>
+
+  <properties>
+    <jackson.version>2.9.8</jackson.version>
+  </properties>
+
+  <dependencies>
+    <!-- CVE-2019-12384 / CVE-2019-14540 and others — old Jackson,
+         included here specifically to test the OSV lookup path. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>2.1.0.RELEASE</version>
+    </dependency>
+  </dependencies>
+</project>

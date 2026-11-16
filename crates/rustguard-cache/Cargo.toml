@@ -1,0 +1,9 @@
+[package]
+name = "rustguard-cache"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+rustguard-ir = { path = "../rustguard-ir" }
+anyhow.workspace = true
